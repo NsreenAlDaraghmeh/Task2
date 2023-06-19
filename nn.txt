@@ -1,0 +1,1116 @@
+site.master
+<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site1.master.cs" Inherits="Task2.Site1" %>
+
+<!DOCTYPE html>
+<html>
+<head runat="server">
+    <title>My Website</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: "Lato", sans-serif;
+        }
+
+        .header {
+            background-color: #f1f1f1;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .footer {
+            background-color: #f1f1f1;
+            padding: 10px;
+            text-align: center;
+            clear: both;
+        }
+
+        .sidebar {
+            float: left;
+            width: 20%;
+            background-color: #f1f1f1;
+            height: 100vh;
+            overflow: auto;
+        }
+
+        .sidebar a {
+            display: block;
+            color: black;
+            padding: 16px;
+            text-decoration: none;
+        }
+
+        .sidebar a.active {
+            background-color: #04AA6D;
+            color: white;
+        }
+
+        .sidebar a:hover:not(.active) {
+            background-color: #555;
+            color: white;
+        }
+
+        .content {
+            margin-left: 20%;
+            padding: 1px 16px;
+/*            height: 1000px;
+*/        }
+    </style>
+    <link href="styles.css" rel="stylesheet" />
+    <asp:ContentPlaceHolder ID="head" runat="server"></asp:ContentPlaceHolder>
+</head>
+<body>
+    <form id="form1" runat="server">
+        <div class="header">
+            <!-- Header content here -->
+            <h1>My Website</h1>
+        </div>
+
+        <div class="sidebar">
+            <!-- Navigation menu here -->
+            <ul class="navbar-nav flex-grow-1">
+                <li class="nav-item"><a class="nav-link" runat="server" href="~/Login">Home</a></li>
+<%--                <li class="nav-item"><a class="nav-link" runat="server" href="~/About">About</a></li>--%>
+                <li class="nav-item"><a class="nav-link" runat="server" href="~/AddClient">Add Client</a></li>
+                <li class="nav-item"><a class="nav-link" runat="server" href="~/Dashboard">Dashboard</a></li>
+            </ul>
+        </div>
+
+        <div class="content">
+            <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server"></asp:ContentPlaceHolder>
+        </div>
+        <br /><br />
+        <div class="footer">
+  <h3 style="text-align:center;">Grid View / Task2</h3>
+        <h3 style="text-align:center;">5/6/2023</h3>      
+
+        </div>
+      
+    </form>
+</body>
+</html>
+loginpage
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site1.Master" AutoEventWireup="true" CodeBehind="Login.aspx.cs" Inherits="Task2.Login" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+
+        .login-container h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .login-container .form-group {
+            margin-bottom: 15px;
+        }
+    </style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
+    <br /><br />
+    <div class="login-container">
+        <h1>Login Page</h1>
+
+        <asp:Label ID="lblMessage" runat="server" Text=""></asp:Label>
+        <div class="form-group">
+            <asp:TextBox ID="txtUsername" runat="server" CssClass="form-control" placeholder="Username"></asp:TextBox>
+        </div>
+        <div class="form-group">
+            <asp:TextBox ID="txtPassword" runat="server" CssClass="form-control" TextMode="Password" placeholder="Password"></asp:TextBox>
+        </div>
+        <asp:Button ID="btnLogin" runat="server" Text="Login" CssClass="btn btn-primary" OnClick="btnLogin_Click" />
+    </div>
+</asp:Content>
+login.cs
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Web.UI.HtmlControls;
+
+
+namespace Task2
+{
+    public partial class Login : System.Web.UI.Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+        }
+        private readonly string connectionString = "Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;";
+
+        protected void btnLogin_Click(object sender, EventArgs e)
+        {
+            string username = txtUsername.Text;
+            string password = txtPassword.Text;
+
+            bool isValidUser = ValidateUser(username, password);
+
+            if (isValidUser)
+            {
+                // Save the login information in the database
+                SaveLoginInformation(username);
+
+                // Redirect to the desired page
+                Response.Redirect("Dashboard.aspx");
+            }
+            else
+            {
+                lblMessage.Text = "Invalid username or password.";
+            }
+        }
+
+        private bool ValidateUser(string username, string password)
+        {
+            using (SqlConnection connection = new SqlConnection("Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;"))
+            {
+                SqlCommand command = new SqlCommand("SELECT COUNT(*) FROM Users WHERE Username = @Username AND Password = @Password", connection);
+                command.Parameters.AddWithValue("@Username", username);
+                command.Parameters.AddWithValue("@Password", password);
+
+                connection.Open();
+                int count = (int)command.ExecuteScalar();
+
+                return count > 0;
+            }
+        }
+
+        private void SaveLoginInformation(string username)
+        {
+            using (SqlConnection connection = new SqlConnection("Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;"))
+            {
+                SqlCommand command = new SqlCommand("INSERT INTO LoginHistory (Username, LoginDateTime) VALUES (@Username, @LoginDateTime)", connection);
+                command.Parameters.AddWithValue("@Username", username);
+                command.Parameters.AddWithValue("@LoginDateTime", DateTime.Now);
+
+                connection.Open();
+                command.ExecuteNonQuery();
+                Session["Username"] = username;
+            }
+        }
+
+    }
+}
+dashboard
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site1.Master" AutoEventWireup="true" CodeBehind="Dashboard.aspx.cs" Inherits="Task2.Dashboard" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            display: inline;
+            margin-right: 10px;
+        }
+
+        .form-inline {
+            display: flex;
+            align-items: center;
+        }
+
+        .form-inline input[type="text"] {
+            width: 200px;
+            margin-right: 10px;
+        }
+
+        .btn {
+            margin-bottom: 10px;
+        }
+    </style>
+</asp:Content>
+
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
+    <div class="container">
+        <h1>Welcome, <%= Session["Username"] %></h1>
+        <ul class="nav">
+            <li class="nav-item"><a href="Login.aspx" class="nav-link">Home</a></li>
+            <li class="nav-item"><a href="Dashboard.aspx" class="nav-link">Dashboard</a></li>
+        </ul>
+        <h2>Client Search</h2>
+        <div class="form-inline">
+            <input type="text" id="txtSearchUsername" placeholder="Username" runat="server" class="form-control" />
+            <asp:DropDownList ID="ddlGender" runat="server" CssClass="form-control"></asp:DropDownList>
+            <asp:Button ID="btnSearch" runat="server" Text="Search" OnClick="Search_Click" CssClass="btn btn-primary" />
+        </div>
+        <ul class="nav justify-content-end">
+            <li class="nav-item"><a href="AddClient.aspx" class="nav-link">Add Client</a></li>
+        </ul>
+        <br />
+        <asp:Label ID="lblMessage" runat="server" CssClass="message"></asp:Label>
+
+        <asp:GridView ID="gvClients" runat="server" DataKeyNames="ClientId" AutoGenerateColumns="False" OnRowEditing="gvClients_RowEditing" OnRowUpdating="gvClients_RowUpdating" OnRowCancelingEdit="gvClients_RowCancelingEdit" OnRowDeleting="gvClients_RowDeleting" CssClass="table table-striped">
+    <Columns>
+        <asp:BoundField DataField="ClientID" HeaderText="Client ID" ItemStyle-CssClass="text-center" />
+        <asp:TemplateField HeaderText="First Name">
+            <ItemTemplate>
+                <asp:Label ID="lblFirstName" runat="server" Text='<%# Eval("FirstName") %>'></asp:Label>
+            </ItemTemplate>
+            <EditItemTemplate>
+                <asp:TextBox ID="txtFirstNameEdit"  runat="server" Text='<%# Bind("FirstName") %>'></asp:TextBox>
+            </EditItemTemplate>
+        </asp:TemplateField>
+        <asp:TemplateField HeaderText="Last Name">
+            <ItemTemplate>
+                <asp:Label ID="lblLastName" runat="server" Text='<%# Eval("LastName") %>'></asp:Label>
+            </ItemTemplate>
+            <EditItemTemplate>
+                <asp:TextBox ID="txtLastNameEdit" runat="server" Text='<%# Bind("LastName") %>'></asp:TextBox>
+            </EditItemTemplate>
+        </asp:TemplateField>
+        <asp:TemplateField HeaderText="Gender">
+            <ItemTemplate>
+                <asp:Label ID="lblGender" runat="server" Text='<%# Bind("Gender") %>'></asp:Label>
+            </ItemTemplate>
+            <EditItemTemplate>
+                <asp:DropDownList ID="ddlGenderEdit" runat="server" CssClass="form-control" SelectedValue='<%# Bind("Gender") %>'>
+                    <asp:ListItem Text="Male" Value="Male"></asp:ListItem>
+                    <asp:ListItem Text="Female" Value="Female"></asp:ListItem>
+                </asp:DropDownList>
+            </EditItemTemplate>
+        </asp:TemplateField>
+        <asp:TemplateField HeaderText="User Type">
+            <ItemTemplate>
+                <asp:Label ID="lblUserType" runat="server" Text='<%# Bind("UserType") %>'></asp:Label>
+            </ItemTemplate>
+            <EditItemTemplate>
+                <asp:DropDownList ID="ddlUserTypeEdit" runat="server" CssClass="form-control" SelectedValue='<%# Bind("UserType") %>'>
+                    <asp:ListItem Text="Admin" Value="Admin"></asp:ListItem>
+                    <asp:ListItem Text="User" Value="User"></asp:ListItem>
+                </asp:DropDownList>
+            </EditItemTemplate>
+        </asp:TemplateField>
+        <asp:TemplateField HeaderText="Language">
+            <ItemTemplate>
+                <asp:Label ID="lblLanguage" runat="server" Text='<%# Bind("Language") %>'></asp:Label>
+            </ItemTemplate>
+            <EditItemTemplate>
+                <asp:DropDownList ID="ddlLanguageEdit" runat="server" CssClass="form-control" SelectedValue='<%# Bind("Language") %>'>
+<%--                    <asp:ListItem Text="Select Language" Value=""></asp:ListItem>--%>
+                    <asp:ListItem Text="English" Value="English"></asp:ListItem>
+                    <asp:ListItem Text="Arabic" Value="Arabic"></asp:ListItem>
+                    <asp:ListItem Text="Spanish" Value="Spanish"></asp:ListItem>
+                    <asp:ListItem Text="French" Value="French"></asp:ListItem>
+
+
+                </asp:DropDownList>
+            </EditItemTemplate>
+        </asp:TemplateField>
+<asp:TemplateField HeaderText="Date of Birth">
+    <ItemTemplate>
+        <asp:Label ID="lblDateOfBirth" runat="server" Text='<%# Eval("DateOfBirth", "{0:yyyy-MM-dd}") %>'></asp:Label>
+    </ItemTemplate>
+    <EditItemTemplate>
+<%--        <asp:TextBox ID="txtDateOfBirthEdit" runat="server" Text='<%# Bind("DateOfBirth", "{0:yyyy-MM-dd}") %>'></asp:TextBox>--%>
+<input type="date" id="txtDateOfBirthEdit" name="txtDateOfBirthEdit" runat="server" class="form-control" value='<%# Bind("DateOfBirth", "{0:yyyy-MM-dd}")%>' />
+
+    </EditItemTemplate>
+</asp:TemplateField>
+
+        <asp:CommandField ShowEditButton="True" ShowDeleteButton="True" />
+    </Columns>
+</asp:GridView>
+
+
+    </div>
+</asp:Content>
+dashboard.cs
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Web.UI.HtmlControls;
+using System.Data;
+using System.Data.SqlClient;
+
+
+
+namespace Task2
+{
+    public partial class Dashboard : System.Web.UI.Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+            {
+                // Populate gender dropdownlist
+                ddlGender.DataSource = GetGenderDataFromDatabase();
+                ddlGender.DataTextField = "GenderName";
+                ddlGender.DataValueField = "GenderId";
+                ddlGender.DataBind();
+                //lblLanguage.DataSource = GetLanguageDataFromDatabase();
+                //lblLanguage.DataTextField = "LanguageName";
+                //ddlLanguage.DataValueField = "LanguageId";
+                //ddlLanguage.DataBind();
+                //ddlUserType.DataSource = GetUserTypeDataFromDatabase();
+                //ddlUserType.DataTextField = "UserType";
+                //ddlUserType.DataValueField = "UserTypId";
+                //ddlUserType.DataBind();
+                gvClients.DataKeyNames = new string[] { "ClientId" };
+                BindGridView();
+
+            }
+
+            // Bind the grid view with the appropriate data
+        }
+        private void BindGridView()
+        {
+            // Retrieve data from the database or any other source
+            DataTable dt = GetClients();
+
+            // Check if the DataTable contains data
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                // Bind the GridView with the DataTable
+                gvClients.DataSource = dt;
+                gvClients.DataBind();
+            }
+            else
+            {
+                // If no data is available, display a message or handle it accordingly
+                lblMessage.Text = "No clients found.";
+            }
+        }
+        private DataTable GetGenderDataFromDatabase()
+        {
+  
+            DataTable dtGender = new DataTable();
+            dtGender.Columns.Add("GenderId", typeof(int));
+            dtGender.Columns.Add("GenderName", typeof(string));
+
+            dtGender.Rows.Add(1, "Female");
+            dtGender.Rows.Add(2, "Male");
+
+            return dtGender;
+        }
+        //private DataTable GetLanguageDataFromDatabase()
+        //{
+
+        //    DataTable dtLanguage = new DataTable();
+        //    dtLanguage.Columns.Add("LanguageId", typeof(int));
+        //    dtLanguage.Columns.Add("LanguageName", typeof(string));
+
+        //    dtLanguage.Rows.Add(1, "English");
+        //    dtLanguage.Rows.Add(2, "Arabic");
+        //    dtLanguage.Rows.Add(1, "Spanish");
+        //    dtLanguage.Rows.Add(1, "French");
+
+
+        //    return dtLanguage;
+        //}
+
+        //private DataTable GetUserTypeDataFromDatabase()
+        //{
+
+        //    DataTable dtUserType = new DataTable();
+        //    dtUserType.Columns.Add("UserTypeId", typeof(int));
+        //    dtUserType.Columns.Add("UserType", typeof(string));
+
+        //    dtUserType.Rows.Add(1, "Admin");
+        //    dtUserType.Rows.Add(2, "User");
+
+        //    return dtUserType;
+        //}
+
+
+        protected void Search_Click(object sender, EventArgs e)
+        {
+            string searchUsername = txtSearchUsername.Value;
+            string searchGender = ddlGender.SelectedItem.Text;
+            string connectionString = "Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;";
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                // Modify the query to include the correct column names and join condition
+                SqlCommand command = new SqlCommand("SELECT Clients.ClientId, Clients.FirstName, Clients.LastName, Gender.GenderName AS Gender , Language.LanguageName AS Language , UserType.UserType AS UserType, Clients.DateOfBirth " +
+                                                    "FROM Clients " +
+                                                    "JOIN Gender ON Clients.GenderId = Gender.GenderId " +
+                                                    "JOIN Language ON Clients.LanguageId = Language.LanguageId " +
+                                                    "JOIN UserType ON Clients.UserTypeId = UserType.UserTypeId " +
+                                                    "WHERE Clients.FirstName LIKE @Username AND Gender.GenderName = @GenderName", connection);
+                command.Parameters.AddWithValue("@Username", "%" + searchUsername + "%");
+                command.Parameters.AddWithValue("@GenderName", searchGender); // Add this line to declare and assign value to the '@GenderName' parameter
+
+                SqlDataAdapter adapter = new SqlDataAdapter(command);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+
+                gvClients.DataSource = dt;
+                gvClients.DataKeyNames = new string[] { "ClientId" }; // Set the primary key column name(s)
+                gvClients.DataBind();
+            }
+        }
+
+
+
+        protected void gvClients_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            gvClients.EditIndex = e.NewEditIndex;
+
+            BindGridView();
+        }
+
+        //protected void gvClients_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        //{
+        //    GridViewRow row = gvClients.Rows[e.RowIndex];
+        //    int clientId = Convert.ToInt32(gvClients.DataKeys[e.RowIndex].Value);
+        //    TextBox txtFirstNameEdit = row.FindControl("txtFirstNameEdit") as TextBox;
+        //    TextBox txtLastNameEdit = row.FindControl("txtLastNameEdit") as TextBox;
+        //    DropDownList ddlGenderEdit = row.FindControl("ddlGenderEdit") as DropDownList;
+        //    DropDownList ddlLanguageEdit = row.FindControl("ddlLanguageEdit") as DropDownList;
+        //    DropDownList ddlUserTypeEdit = row.FindControl("ddlUserTypeEdit") as DropDownList;
+        //    TextBox txtDateOfBirthEdit = row.FindControl("txtDateOfBirthEdit") as TextBox;
+
+        //    if (txtFirstNameEdit != null && txtLastNameEdit != null && ddlGenderEdit != null && ddlLanguageEdit != null && ddlUserTypeEdit != null && txtDateOfBirthEdit != null)
+        //    {
+        //        string firstName = txtFirstNameEdit.Text;
+        //        string lastName = txtLastNameEdit.Text;
+        //        string gender = ddlGenderEdit.SelectedValue;
+        //        string language = ddlLanguageEdit.SelectedValue;
+        //        string userType = ddlUserTypeEdit.SelectedValue;
+        //        string dateOfBirth = txtDateOfBirthEdit.Text;
+
+        //        // Handle null or empty values
+        //        if (string.IsNullOrEmpty(firstName))
+        //        {
+        //            // Handle the error (e.g., display an error message or assign a default value)
+        //        }
+        //        if (string.IsNullOrEmpty(lastName))
+        //        {
+        //            // Handle the error (e.g., display an error message or assign a default value)
+        //        }
+
+        //        string connectionString = "Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;";
+
+        //        using (SqlConnection connection = new SqlConnection(connectionString))
+        //        {
+        //            connection.Open();
+
+        //            // Update GenderId based on the selected gender value
+        //            int genderId = GetGenderIdByName(gender, connection);
+        //            // Update UserTypeId based on the selected user type value
+        //            int userTypeValue = GetUserTypeIdByName(userType, connection);
+        //            // Update LanguageId based on the selected language value
+        //            int languageId = GetLanguageIdByName(language, connection);
+
+        //            SqlCommand command = new SqlCommand("UPDATE Clients SET FirstName = @FirstName, LastName = @LastName, GenderId = @GenderId, UserTypeId = @UserTypeId, DateOfBirth = @DateOfBirth, LanguageId = @LanguageId WHERE ClientId = @ClientId", connection);
+        //            command.Parameters.AddWithValue("@FirstName", firstName);
+        //            command.Parameters.AddWithValue("@LastName", lastName);
+        //            command.Parameters.AddWithValue("@GenderId", genderId);
+        //            command.Parameters.AddWithValue("@UserTypeId", userTypeValue);
+        //            command.Parameters.AddWithValue("@DateOfBirth", DateTime.Parse(dateOfBirth).Date);
+        //            command.Parameters.AddWithValue("@LanguageId", languageId);
+        //            command.Parameters.AddWithValue("@ClientId", clientId);
+
+        //            command.ExecuteNonQuery();
+        //        }
+
+        //        gvClients.EditIndex = -1; // Exit edit mode
+        //        BindGridView();
+        //    }
+        //}
+        protected void gvClients_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            GridViewRow row = gvClients.Rows[e.RowIndex];
+
+            // Get the updated values from the row controls
+            string clientId = gvClients.DataKeys[e.RowIndex].Value.ToString();
+            string firstName = ((TextBox)row.FindControl("txtFirstNameEdit")).Text;
+            string lastName = ((TextBox)row.FindControl("txtLastNameEdit")).Text;
+            string gender = ((DropDownList)row.FindControl("ddlGenderEdit")).SelectedValue;
+            string userType = ((DropDownList)row.FindControl("ddlUserTypeEdit")).SelectedValue;
+            string language = ((DropDownList)row.FindControl("ddlLanguageEdit")).SelectedValue;
+            string dateOfBirth = ((HtmlInputGenericControl)row.FindControl("txtDateOfBirthEdit")).Value;
+
+            // Update the database with the new values
+            string connectionString = "Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True";
+            using (SqlConnection con = new SqlConnection(connectionString))
+            {
+                SqlCommand cmd = new SqlCommand("UPDATE Clients SET FirstName = @FirstName, LastName = @LastName, GenderId = @GenderId, UserTypeId = @UserTypeId, LanguageId = @LanguageId, DateOfBirth = @DateOfBirth WHERE ClientId = @ClientId", con);
+                cmd.Parameters.AddWithValue("@FirstName", firstName);
+                cmd.Parameters.AddWithValue("@LastName", lastName);
+
+                int genderId;
+                if (gender == "Female")
+                {
+                    genderId = 1; // Assuming 1 represents Female in your database
+                }
+                else if (gender == "Male")
+                {
+                    genderId = 2; // Assuming 2 represents Male in your database
+                }
+                else
+                {
+                    // Handle any other cases or set a default value
+                    genderId = 0; // or any other appropriate default value
+                }
+                cmd.Parameters.AddWithValue("@GenderId", genderId);
+
+                int userTypeId;
+                if (userType == "Admin")
+                {
+                    userTypeId = 1; // Assuming 1 represents Admin in your database
+                }
+                else if (userType == "User")
+                {
+                    userTypeId = 2; // Assuming 2 represents User in your database
+                }
+                else
+                {
+                    // Handle any other cases or set a default value
+                    userTypeId = 0; // or any other appropriate default value
+                }
+                cmd.Parameters.AddWithValue("@UserTypeId", userTypeId);
+
+                int languageId;
+                if (language == "English")
+                {
+                    languageId = 1; // Assuming 1 represents English in your database
+                }
+                else if (language == "French")
+                {
+                    languageId = 4; // Assuming 4 represents French in your database
+                }
+                else if (language == "Spanish")
+                {
+                    languageId = 3; // Assuming 3 represents Spanish in your database
+                }
+                else if (language == "Arabic")
+                {
+                    languageId = 2; // Assuming 2 represents Arabic in your database
+                }
+                else
+                {
+                    // Handle any other cases or set a default value
+                    languageId = 0; // or any other appropriate default value
+                }
+                cmd.Parameters.AddWithValue("@LanguageId", languageId);
+
+                cmd.Parameters.AddWithValue("@DateOfBirth", DateTime.Parse(dateOfBirth));
+                cmd.Parameters.AddWithValue("@ClientId", clientId);
+
+                con.Open();
+                cmd.ExecuteNonQuery();
+            }
+
+            // Exit edit mode
+            gvClients.EditIndex = -1;
+
+            // Refresh the GridView
+            BindGridView();
+        }
+
+        //private int GetGenderIdByName(string gender, SqlConnection connection)
+        //{
+        //    SqlCommand command = new SqlCommand("SELECT GenderId FROM Genders WHERE GenderName = @GenderName", connection);
+        //    command.Parameters.AddWithValue("@GenderId", gender);
+        //    object result = command.ExecuteScalar();
+        //    return result != null ? (int)result : 0; // Return GenderId or default value if not found
+        //}
+
+        //private int GetUserTypeIdByName(string userType, SqlConnection connection)
+        //{
+        //    SqlCommand command = new SqlCommand("SELECT UserTypeId FROM UserTypes WHERE UserType = @UserType", connection);
+        //    command.Parameters.AddWithValue("@UserType", userType);
+        //    object result = command.ExecuteScalar();
+        //    return result != null ? (int)result : 0; // Return UserTypeId or default value if not found
+        //}
+
+        //private int GetLanguageIdByName(string language, SqlConnection connection)
+        //{
+        //    SqlCommand command = new SqlCommand("SELECT LanguageId FROM Languages WHERE Language = @LanguageName", connection);
+        //    command.Parameters.AddWithValue("@Language", language);
+        //    object result = command.ExecuteScalar();
+        //    return result != null ? (int)result : 0; // Return LanguageId or default value if not found
+        //}
+
+
+
+        //protected void gvClients_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        //{
+        //    GridViewRow row = gvClients.Rows[e.RowIndex];
+        //    int clientId = Convert.ToInt32(gvClients.DataKeys[e.RowIndex].Value);
+        //    //TextBox txtFirstNameEdit = row.FindControl("txtFirstNameEdit") as TextBox;
+
+        //    //TextBox txtLastNameEdit = row.FindControl("txtLastNameEdit") as TextBox;
+        //    //DropDownList ddlGenderEdit = row.FindControl("ddlGenderEdit") as DropDownList;
+        //    //DropDownList ddlLanguageEdit = row.FindControl("ddlLanguageEdit") as DropDownList;
+        //    //DropDownList ddlUserTypeEdit = row.FindControl("ddlUserTypeEdit") as DropDownList;
+        //    //string dateOfBirth = Request.Form["txtDateOfBirthEdit"];
+
+        //    //if (txtFirstNameEdit != null && txtLastNameEdit != null && ddlGenderEdit != null && ddlLanguageEdit != null && ddlUserTypeEdit != null && !string.IsNullOrEmpty(dateOfBirth))
+        //    //{
+        //    string firstName = ((TextBox)row.FindControl("txtFirstNameEdit")).Text;
+
+        //        ////string firstName = txtFirstNameEdit.Text;
+        //        //string lastName = txtLastNameEdit.Text;
+        //        //string gender = ddlGenderEdit.SelectedValue;
+        //        //string language = ddlLanguageEdit.SelectedValue;
+        //        //string userType = ddlUserTypeEdit.SelectedValue;
+        //    string lastName = ((TextBox)row.FindControl("txtLastNameEdit")).Text;
+        //    string genderName = ((DropDownList)row.FindControl("ddlGenderEdit")).SelectedValue;
+        //    string userTypeName = ((DropDownList)row.FindControl("ddlUserTypeEdit")).SelectedValue;
+        //    string languageName = ((DropDownList)row.FindControl("ddlLanguageEdit")).SelectedValue;
+        //    //string dateOfBirth = ((TextBox)row.FindControl("txtDateOfBirthEdit")).Text;
+        //    string dateOfBirth = ((HtmlInputGenericControl)row.FindControl("txtDateOfBirthEdit")).Value;
+
+
+
+
+        //    string connectionString = "Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;";
+
+        //        using (SqlConnection connection = new SqlConnection(connectionString))
+        //        {
+        //            connection.Open();
+
+        //            int genderId = 0; // Default value if no matching value found
+        //            if (genderName == "Male")
+        //            {
+        //                genderId = 1; // Map 'Male' to 1
+        //            }
+        //            else if (genderName == "Female")
+        //            {
+        //                genderId = 2; // Map 'Female' to 2
+        //            }
+        //            // Add more mappings as needed
+
+        //            int userTypeValue = 0; // Default value if no matching value found
+        //            if (userTypeName == "User")
+        //            {
+        //                userTypeValue = 1; // Map 'User' to 1
+        //            }
+        //            else if (userTypeName == "Admin")
+        //            {
+        //                userTypeValue = 2; // Map 'Admin' to 2
+        //            }
+        //            // Add more mappings as needed
+
+        //            // Retrieve the LanguageId based on the selected language value
+        //            int languageId = 0; // Default value if no matching value found
+        //            if (languageName == "English")
+        //            {
+        //                languageId = 1; // Map 'English' to 1
+        //            }
+        //            else if (languageName == "Spanish")
+        //            {
+        //                languageId = 3; // Map 'Spanish' to 3
+        //            }
+        //            else if (languageName == "French")
+        //            {
+        //                languageId = 4; // Map 'French' to 4
+        //            }
+        //            else if (languageName == "Arabic")
+        //            {
+        //                languageId = 2; // Map 'Aabic' to 2
+        //            }
+        //            // Add more mappings as needed
+
+        //            DateTime dateOfBirthValue;
+        //            if (DateTime.TryParse(dateOfBirth, out dateOfBirthValue))
+        //            {
+        //                SqlCommand command = new SqlCommand("UPDATE Clients SET FirstName = @FirstName, LastName = @LastName, GenderId = @GenderId, UserTypeId = @UserTypeId, DateOfBirth = @DateOfBirth, LanguageId = @LanguageId WHERE ClientId = @ClientId", connection);
+        //                command.Parameters.AddWithValue("@FirstName", firstName);
+        //                command.Parameters.AddWithValue("@LastName", lastName);
+        //                command.Parameters.AddWithValue("@GenderId", genderName);
+        //                command.Parameters.AddWithValue("@UserTypeId", userTypeName);
+        //                command.Parameters.AddWithValue("@DateOfBirth", dateOfBirthValue.Date);
+        //                command.Parameters.AddWithValue("@LanguageId", languageName);
+        //                command.Parameters.AddWithValue("@ClientId", clientId);
+
+        //                command.ExecuteNonQuery();
+        //            }
+        //            else
+        //            {
+        //                // Handle the case where dateOfBirth is not a valid DateTime value
+        //                // You can display an error message or take appropriate action
+        //            }
+        //        //}
+
+        //        gvClients.EditIndex = -1; // Exit edit mode
+        //        BindGridView();
+        //    }
+        //}
+
+        protected void gvClients_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            gvClients.EditIndex = -1;
+            BindGridView();
+        }
+
+        protected void gvClients_RowDeleting(object sender, GridViewDeleteEventArgs e)
+        {
+            int clientId = Convert.ToInt32(gvClients.DataKeys[e.RowIndex].Value);
+
+            string connectionString = "Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;";
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                SqlCommand command = new SqlCommand("DELETE FROM Clients WHERE ClientId = @ClientId", connection);
+                command.Parameters.AddWithValue("@ClientId", clientId);
+                command.ExecuteNonQuery();
+            }
+
+            BindGridView();
+        }
+
+
+
+        private void BindGridView(string username = "", string gender = "")
+        {
+            // Retrieve the client data based on the provided filters (optional)
+            DataTable dt = GetClients(username, gender);
+            gvClients.DataSource = dt;
+            gvClients.DataBind();
+        }
+
+
+
+
+        //private DataTable GetClients(string username = "", string gender = "")
+        //{
+        //    DataTable dt = new DataTable();
+
+        //    using (SqlConnection connection = new SqlConnection("Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;"))
+        //    {
+        //        string query = "SELECT Clients.ClientID, Clients.FirstName, Clients.LastName, Gender.GenderName AS Gender, UserType.UserType AS UserType, Clients.DateOfBirth, Language.LanguageName AS Language FROM Clients INNER JOIN Gender ON Clients.GenderId = Gender.GenderId INNER JOIN UserType ON Clients.UserType = UserType.UserTypeId INNER JOIN Language ON Clients.LanguageId = Language.LanguageId";
+        //        string whereClause = "";
+
+        //        if (!string.IsNullOrEmpty(username))
+        //        {
+        //            whereClause += " (Clients.FirstName LIKE @Username OR Clients.LastName LIKE @Username)";
+        //        }
+
+        //        if (!string.IsNullOrEmpty(gender))
+        //        {
+        //            if (!string.IsNullOrEmpty(whereClause))
+        //            {
+        //                whereClause += " AND";
+        //            }
+        //            whereClause += " Gender.GenderName = @Gender";
+        //        }
+
+        //        if (!string.IsNullOrEmpty(whereClause))
+        //        {
+        //            query += " WHERE " + whereClause;
+        //        }
+
+        //        using (SqlCommand command = new SqlCommand(query, connection))
+        //        {
+        //            command.Parameters.AddWithValue("@Username", "%" + username + "%");
+        //            command.Parameters.AddWithValue("@Gender", gender);
+        //            connection.Open();
+        //            using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+        //            {
+        //                adapter.Fill(dt);
+        //            }
+        //        }
+        //    }
+
+        //    return dt;
+        //}
+
+        private DataTable GetClients(string username = "", string gender = "")
+        {
+            DataTable dt = new DataTable();
+
+            using (SqlConnection connection = new SqlConnection("Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;"))
+            {
+                string query = "SELECT Clients.ClientId, Clients.FirstName, Clients.LastName, Gender.GenderName AS Gender, UserType.UserType AS UserType, Clients.DateOfBirth, Language.LanguageName AS Language FROM Clients INNER JOIN Gender ON Clients.GenderId = Gender.GenderId INNER JOIN UserType ON Clients.UserTypeId = UserType.UserTypeId INNER JOIN Language ON Clients.LanguageId = Language.LanguageId";
+                string whereClause = "";
+
+                if (!string.IsNullOrEmpty(username))
+                {
+                    whereClause += " (Clients.FirstName LIKE @Username OR Clients.LastName LIKE @Username)";
+                }
+
+                if (!string.IsNullOrEmpty(gender))
+                {
+                    if (!string.IsNullOrEmpty(whereClause))
+                    {
+                        whereClause += " AND";
+                    }
+                    whereClause += " Gender.GenderName = @GenderName";
+                }
+
+                if (!string.IsNullOrEmpty(whereClause))
+                {
+                    query += " WHERE " + whereClause;
+                }
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Username", "%" + username + "%");
+                    command.Parameters.AddWithValue("@GenderName", gender);
+                    connection.Open();
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                    {
+                        adapter.Fill(dt);
+                    }
+                }
+
+            }
+
+            return dt;
+        }
+
+
+    }
+}
+Add client
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site1.Master" AutoEventWireup="true" CodeBehind="AddClient.aspx.cs" Inherits="Task2.AddClient" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+        }
+
+        .form-group input[type="text"],
+        .form-group select,
+        .form-group input[type="date"] {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .form-group button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+</asp:Content>
+
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
+    <br /><br />
+    <div class="container">
+        <h2>Add Client</h2>
+        <div id="addClientForm" runat="server">
+            <div class="form-group">
+                <label for="txtFirstName">First Name:</label>
+                <input type="text" id="txtFirstName" runat="server" name="txtFirstName" required />
+            </div>
+            <div class="form-group">
+                <label for="txtLastName">Last Name:</label>
+                <input type="text" id="txtLastName" runat="server" name="txtLastName" required />
+            </div>
+            <div class="form-group">
+                <label for="ddlGender">Gender:</label>
+                <asp:DropDownList ID="ddlGender" runat="server" CssClass="form-control">
+                    <asp:ListItem Text="Male" Value="Male"></asp:ListItem>
+                    <asp:ListItem Text="Female" Value="Female"></asp:ListItem>
+                </asp:DropDownList>
+            </div>
+            <div class="form-group">
+                <label for="ddlLanguage">Language:</label>
+                <asp:DropDownList ID="ddlLanguage" runat="server" CssClass="form-control">
+                    <asp:ListItem Text="English" Value="English"></asp:ListItem>
+                    <asp:ListItem Text="Spanish" Value="Spanish"></asp:ListItem>
+                    <asp:ListItem Text="French" Value="French"></asp:ListItem>
+                    <asp:ListItem Text="Arabic" Value="Arabic"></asp:ListItem>
+
+                </asp:DropDownList>
+            </div>
+            <div class="form-group">
+                <label for="ddlUserType">User Type:</label>
+                <asp:DropDownList ID="ddlUserType" runat="server" CssClass="form-control">
+                    <asp:ListItem Text="Admin" Value="Admin"></asp:ListItem>
+                    <asp:ListItem Text="User" Value="User"></asp:ListItem>
+                </asp:DropDownList>
+            </div>
+            <div class="form-group">
+                <label for="txtDateOfBirth">Date of Birth:</label>
+                <input type="date" id="txtDateOfBirth" name="txtDateOfBirth" required runat="server" class="form-control" />
+            </div>
+            <div class="form-group">
+                <asp:Button ID="btnSave" runat="server" Text="Save" OnClick="btnSave_Click" CssClass="btn btn-primary" />
+            </div>
+        </div>
+    </div>
+    <br /><br />
+    <div class="container" style="width:100%;">
+        <h2>Client List</h2>
+        <asp:GridView ID="gvClients" runat="server" AutoGenerateColumns="false" CssClass="table table-striped">
+            <Columns>
+                <asp:BoundField DataField="ClientId" HeaderText="Client ID" ItemStyle-CssClass="text-center" />
+<asp:BoundField DataField="FirstName" HeaderText="First Name" />
+<asp:BoundField DataField="LastName" HeaderText="Last Name" />
+<asp:BoundField DataField="GenderName" HeaderText="Gender" ItemStyle-CssClass="text-center" />
+<asp:BoundField DataField="UserType" HeaderText="User Type" />
+<asp:BoundField DataField="DateOfBirth" HeaderText="Date of Birth" DataFormatString="{0:dd/MM/yyyy}" ItemStyle-CssClass="text-center" />
+<asp:BoundField DataField="LanguageName" HeaderText="Language" ItemStyle-CssClass="text-center" />
+</Columns>
+        </asp:GridView>
+    </div>
+</asp:Content>
+Addclient.cs
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Web.UI.WebControls;
+
+namespace Task2
+{
+    public partial class AddClient : System.Web.UI.Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (!IsPostBack)
+            {
+                BindGridView();
+            }
+        }
+
+        protected void btnSave_Click(object sender, EventArgs e)
+        {
+            string firstName = txtFirstName.Value;
+            string lastName = txtLastName.Value;
+            string gender = ddlGender.SelectedValue;
+            string language = ddlLanguage.SelectedValue;
+            string userType = ddlUserType.SelectedValue;
+            string dateOfBirth = txtDateOfBirth.Value;
+
+            string connectionString = "Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;";
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                int genderId = 0; // Default value if no matching value found
+                if (gender == "Male")
+                {
+                    genderId = 2; // Map 'Male' to 2
+                }
+                else if (gender == "Female")
+                {
+                    genderId = 1; // Map 'Female' to 1
+                }
+                // Add more mappings as needed
+
+                int userTypeValue = 0; // Default value if no matching value found
+                if (userType == "User")
+                {
+                    userTypeValue = 2; // Map 'User' to 1
+                }
+                else if (userType == "Admin")
+                {
+                    userTypeValue = 1; // Map 'Admin' to 2
+                }
+                // Add more mappings as needed
+
+                // Retrieve the LanguageId based on the selected language value
+                int languageId = 0; // Default value if no matching value found
+                if (language == "English")
+                {
+                    languageId = 1; // Map 'English' to 1
+                }
+                else if (language == "Spanish")
+                {
+                    languageId = 3; // Map 'Spanish' to 3
+                }
+                else if (language == "French")
+                {
+                    languageId = 4; // Map 'French' to 4
+                }
+                else if (language == "Arabic")
+                {
+                    languageId = 2; // Map 'Arabic' to 2
+                }
+                // Add more mappings as needed
+
+                SqlCommand command = new SqlCommand("INSERT INTO Clients (FirstName, LastName, GenderId, UserTypeId, DateOfBirth, LanguageId) VALUES (@FirstName, @LastName, @GenderId, @UserType, @DateOfBirth, @LanguageId)", connection);
+                command.Parameters.AddWithValue("@FirstName", firstName);
+                command.Parameters.AddWithValue("@LastName", lastName);
+                command.Parameters.AddWithValue("@GenderId", genderId);
+                command.Parameters.AddWithValue("@UserType", userTypeValue);
+                command.Parameters.AddWithValue("@DateOfBirth", DateTime.Parse(dateOfBirth).Date);
+                command.Parameters.AddWithValue("@LanguageId", languageId);
+
+                command.ExecuteNonQuery();
+            }
+
+            // Clear the form after saving
+            txtFirstName.Value = "";
+            txtLastName.Value = "";
+            ddlGender.SelectedValue = "";
+            ddlLanguage.SelectedValue = "";
+            ddlUserType.SelectedValue = "";
+            txtDateOfBirth.Value = "";
+
+            // Refresh the GridView
+            BindGridView();
+        }
+
+
+        protected void BindGridView()
+        {
+            string connectionString = "Server=ITG-NDARAGHMEH;Database=Task2;Integrated Security=True;";
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                SqlCommand command = new SqlCommand("SELECT Clients.ClientId, Clients.FirstName, Clients.LastName, Gender.GenderName, UserType.UserType, Clients.DateOfBirth, Language.LanguageName FROM Clients INNER JOIN Gender ON Clients.GenderId = Gender.GenderId INNER JOIN UserType ON Clients.UserTypeId = UserType.UserTypeId INNER JOIN Language ON Clients.LanguageId = Language.LanguageId", connection);
+                SqlDataAdapter adapter = new SqlDataAdapter(command);
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+
+                gvClients.DataSource = dt;
+                gvClients.DataBind();
+            }
+        }
+    }
+}
+
